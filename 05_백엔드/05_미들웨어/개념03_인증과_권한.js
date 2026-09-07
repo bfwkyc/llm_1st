@@ -151,7 +151,7 @@ app.get("/me", 인증, (req, res) => {
 
 // 확인: GET /me [Authorization: Bearer key-admin-1]
 // 응답: 200 {"이름":"이서연","역할":"admin"}
-
+  
 // ★ 라우트 안에는 인증 코드가 한 줄도 없습니다.
 //   "req.user 는 이미 있다" 고 믿고 쓰면 됩니다.
 //   미들웨어가 없으면 여기까지 못 오니까요.

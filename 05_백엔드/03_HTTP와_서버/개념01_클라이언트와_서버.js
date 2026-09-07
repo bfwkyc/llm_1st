@@ -33,41 +33,52 @@
 //   항상 클라이언트가 물어봐야 대답합니다.
 //   서버가 알아서 브라우저에 뭔가 보내는 일은 없습니다.
 
-
 // ── 섹션 1: URL 을 뜯어봅시다 ──
 
 // 요청을 보내려면 '어디로' 를 알아야 합니다. 그게 URL 입니다.
 // Node 에는 URL 을 분석해 주는 도구가 이미 들어 있습니다.
 
-const 주소 = new URL("https://api.example.com:8080/documents/12?type=pdf&page=2#top");
+const 주소 = new URL(
+  "https://api.example.com:8080/documents/12?type=pdf&page=2#top",
+);
 
 //   https :// api.example.com : 8080 /documents/12 ?type=pdf&page=2 #top
 //   ─────     ──────────────   ────  ─────────────  ───────────────  ────
 //   프로토콜      호스트         포트      경로            쿼리        해시
 
+// [Line 38] 완전한 웹 주소를 분석하기 위해 WHATWG URL 객체 생성
+const 주소 = new URL(
+  "https://api.example.com:8080/documents/12?type=pdf&page=2#top",
+);
+
+// [Line 45] 프로토콜 확인 (콜론 : 이 포함된 문자열 반환)
 console.log(주소.protocol);
-// 출력: https:
-// 콜론이 함께 나옵니다. "https" 가 아니라 "https:" 입니다.
+// 🔊 콘솔 출력: https:
 
+// [Line 49] 호스트명(도메인/컴퓨터 이름) 확인
 console.log(주소.hostname);
-// 출력: api.example.com
-// 어느 컴퓨터인지를 가리킵니다.
+// 🔊 콘솔 출력: api.example.com
 
+// [Line 53] 포트 번호(출입문 번호) 확인
 console.log(주소.port);
-// 출력: 8080
-// 그 컴퓨터의 몇 번 문으로 들어갈지입니다. 섹션 3에서 자세히 봅니다.
+// 🔊 콘솔 출력: 8080
 
+// [Line 57] 경로(서버 자원의 명사형 위치) 확인
 console.log(주소.pathname);
-// 출력: /documents/12
-// ★ 서버에서 가장 중요한 부분입니다. "무엇을 달라는가" 가 여기 담깁니다.
+// 🔊 콘솔 출력: /documents/12
 
+// [Line 61] 해시(브라우저 전용 위치 책갈피, 서버로 전송되지 않음) 확인
 console.log(주소.hash);
-// 출력: #top
-// 페이지 안의 위치입니다. ★ 서버로 전송되지 않습니다. 브라우저만 씁니다.
+// 🔊 콘솔 출력: #top
+
+// ── ✏️ [Line 66~69] 직접 해보기 1 정답 코드 ──
+const u1 = new URL("http://localhost:3000/api/users");
+console.log(u1.hostname); // 🔊 콘솔 출력: localhost
+console.log(u1.port); // 🔊 콘솔 출력: 3000
+console.log(u1.pathname); // 🔊 콘솔 출력: /api/users
 
 // ✏️ 직접 해보기 1 — "http://localhost:3000/api/users" 를 URL 로 만들어
 //                    hostname, port, pathname 을 각각 출력해 보세요.
-
 
 // ── 섹션 2: 쿼리 스트링 — 조건을 함께 보내기 ──
 
@@ -77,36 +88,39 @@ console.log(주소.hash);
 //               ─────────────────
 //               ? 로 시작, & 로 여러 개, 각각은 이름=값
 
+// [Line 79] 물음표(?)를 포함한 전체 쿼리 문자열 확인
 console.log(주소.search);
-// 출력: ?type=pdf&page=2
-// 통째로 문자열입니다. 직접 자르지 마세요. 아래 방법이 있습니다.
+// 🔊 콘솔 출력: ?type=pdf&page=2
 
+// [Line 83] searchParams.get() 메서드로 개별 쿼리 파라미터 값 추출
 console.log(주소.searchParams.get("type"), 주소.searchParams.get("page"));
-// 출력: pdf 2
+// 🔊 콘솔 출력: pdf 2
 
+// [Line 86] searchParams 에 담긴 모든 파라미터 키(이름) 목록을 배열로 변환
 console.log([...주소.searchParams.keys()]);
-// 출력: [ 'type', 'page' ]
+// 🔊 콘솔 출력: [ 'type', 'page' ]
 
-// ★ 아주 중요 — 꺼낸 값은 언제나 문자열입니다.
+// [Line 89] ★ 중요: 꺼낸 값은 항상 string 자료형임
 console.log(typeof 주소.searchParams.get("page"));
-// 출력: string
-// page=2 라고 숫자를 보냈지만 "2" 로 들어옵니다.
-// 계산하려면 Number 로 바꿔야 합니다. 01단원의 그 함정과 같습니다.
+// 🔊 콘솔 출력: string
 
-// 없는 것을 꺼내면 null 입니다.
+// [Line 95] 존재하지 않는 쿼리 키를 조회하면 undefined 가 아닌 null 반환
 console.log(주소.searchParams.get("없는것"));
-// 출력: null
-// undefined 가 아니라 null 입니다. 확인하고 쓰세요.
+// 🔊 콘솔 출력: null
 
-// 쿼리가 아예 없으면 search 는 빈 문자열입니다.
+// [Line 98] 쿼리가 없는 URL 생성
 const 주소2 = new URL("http://localhost:3000/api/docs");
+// [Line 99] 쿼리가 없으면 search 는 빈 문자열("")
 console.log(JSON.stringify(주소2.search));
-// 출력: ""
+// 🔊 콘솔 출력: ""
 
 // ✏️ 직접 해보기 2 — "/search?q=작업표준서&limit=10" 에서
 //                    q 와 limit 을 꺼내고, limit 의 자료형을 확인해 보세요.
 //                    (앞에 http://localhost:3000 을 붙여야 URL 이 만들어집니다)
-
+const u2 = new URL("http://localhost:3000/search?q=작업표준서&limit=10");
+console.log(u2.searchParams.get("q")); // 작업표준서
+console.log(u2.searchParams.get("limit")); // 10
+console.log(typeof u2.searchParams.get("limit")); // string
 
 // ── 섹션 3: localhost 와 포트 ──
 
@@ -147,7 +161,6 @@ console.log(로컬.hostname, 로컬.port, 로컬.pathname);
 
 // ✏️ 직접 해보기 3 — 포트를 4000 으로 바꾼 주소를 만들어 port 를 출력해 보세요.
 
-
 // ── 섹션 4: 경로 설계 — 무엇을 달라는가 ──
 
 // 서버는 경로를 보고 무엇을 할지 정합니다.
@@ -169,22 +182,27 @@ console.log(로컬.hostname, 로컬.port, 로컬.pathname);
 
 // 경로를 조각으로 나누는 것은 지금까지 배운 것으로 됩니다.
 const 조각 = 로컬.pathname.split("/").filter((s) => s !== "");
-
 console.log(조각);
-// 출력: [ 'api', 'documents' ]
-// 맨 앞의 / 때문에 빈 문자열이 하나 생겨서 filter 로 걸렀습니다.
+// 🔊 콘솔 출력: [ 'api', 'documents' ]
 
+// [Line 154] 상세 조회용 URL 생성
 const 상세 = new URL("http://localhost:3000/api/documents/12");
+// [Line 155] 경로 조각 분할
 const 상세조각 = 상세.pathname.split("/").filter((s) => s !== "");
 
+// [Line 158] 2번 인덱스 파라미터(12) 출력
 console.log(상세조각[2]);
-// 출력: 12
+// 🔊 콘솔 출력: 12
+
+// [Line 160] 경로에서 추출한 파라미터도 string 자료형임
 console.log(typeof 상세조각[2]);
-// 출력: string
-// 경로에서 꺼낸 것도 문자열입니다. 숫자로 쓰려면 Number 로 바꿔야 합니다.
+// 🔊 콘솔 출력: string
 
+// ── ✏️ [Line 165~167] 직접 해보기 4 정답 코드 ──
+const u4 = new URL("http://localhost:3000/api/lines/A/machines/3");
+console.log(u4.pathname.split("/").filter((s) => s !== ""));
+// 🔊 콘솔 출력: [ 'api', 'lines', 'A', 'machines', '3' ]
 // ✏️ 직접 해보기 4 — "/api/lines/A/machines/3" 을 조각으로 나눠 출력해 보세요.
-
 
 // ── 섹션 5: 우리가 만들 구조 ──
 
@@ -205,7 +223,6 @@ console.log(typeof 상세조각[2]);
 //     "요청을 받아서 → 판단하고 → JSON 을 돌려준다"
 //
 // 화면을 그리는 일은 안 합니다. 그건 브라우저 몫입니다.
-
 
 // ── 섹션 6: 자주 하는 실수 ──
 
@@ -253,7 +270,6 @@ try {
 //   그 사람 컴퓨터의 3000 번을 보게 되니까요.
 //   남이 접속하게 하려면 인터넷에 올려야 합니다. (PART 4 의 EC2)
 
-
 // ── 정리 ──
 
 // 1. 클라이언트가 요청하고 서버가 응답한다. 서버가 먼저 말을 걸 수는 없다.
@@ -264,7 +280,6 @@ try {
 // 6. localhost 는 내 컴퓨터, 포트는 그중 몇 번 프로그램인지.
 // 7. 한 포트에는 프로그램 하나. 중복되면 EADDRINUSE.
 // 8. 경로에는 명사를 쓴다. 동작은 메서드로 구분한다.
-
 
 // ============================================================
 // 직접 해보기 정답

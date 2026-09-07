@@ -1,0 +1,18 @@
+{
+  "name": "1",
+  "version": "1.0.0",
+  "description": "",
+  "type": "commonjs",
+  "main": "개념01_Express_시작하기.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon 개념01_미들웨어란_무엇인가.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

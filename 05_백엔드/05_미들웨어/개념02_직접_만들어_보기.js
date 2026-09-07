@@ -140,7 +140,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/header-echo", (req, res) => {
-  // res.get 으로 내가 붙인 헤더를 다시 읽어 볼 수 있습니다.
+  // res.get 으로 내가 붙인 헤더를 다시 읽어   볼 수 있습니다.
   res.json({
     붙였나: res.get("X-Request-Id") !== undefined,
     앱이름: res.get("X-App-Name"),

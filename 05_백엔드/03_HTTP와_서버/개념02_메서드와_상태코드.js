@@ -21,7 +21,6 @@
 //
 //     {"id":3,"title":"작업표준서"}     ← 본문
 
-
 // ── 섹션 1: 메서드 — 무엇을 할 것인가 ──
 
 // 같은 /documents 경로라도 메서드에 따라 하는 일이 다릅니다.
@@ -37,9 +36,10 @@
 //
 // 우리가 만들 서버가 하는 일을 함수로 표현하면 이렇습니다.
 
+// [Line 35~47] 메서드와 경로를 분석하여 작업을 판별하는 함수
 function 무슨일인가(method, path) {
   const 조각 = path.split("/").filter((s) => s !== "");
-  const 개별 = 조각.length > 1; // /documents/12 처럼 뒤에 번호가 있는가
+  const 개별 = 조각.length > 1; // /documents/12 처럼 식별자가 있는가
 
   if (method === "GET") {
     return 개별 ? "하나 조회" : "목록 조회";
@@ -56,21 +56,15 @@ function 무슨일인가(method, path) {
   return "모르는 메서드";
 }
 
-console.log(무슨일인가("GET", "/documents"));
-// 출력: 목록 조회
-console.log(무슨일인가("GET", "/documents/12"));
-// 출력: 하나 조회
-console.log(무슨일인가("POST", "/documents"));
-// 출력: 새로 만들기
-console.log(무슨일인가("DELETE", "/documents/12"));
-// 출력: 삭제
+// [Line 49~56] 기본 동작 판별 테스트
+console.log(무슨일인가("GET", "/documents")); // 출력: 목록 조회
+console.log(무슨일인가("GET", "/documents/12")); // 출력: 하나 조회
+console.log(무슨일인가("POST", "/documents")); // 출력: 새로 만들기
+console.log(무슨일인가("DELETE", "/documents/12")); // 출력: 삭제
 
-// 04단원부터 Express 를 쓰면 이 if 들을 직접 안 써도 됩니다.
-// Express 가 메서드와 경로를 보고 알아서 갈라 줍니다.
-// 다만 '무슨 일이 일어나는지' 는 알고 있어야 합니다.
-
+// [Line 60~62] ✏️ 직접 해보기 1 정답: PATCH 동작 확인
+console.log(무슨일인가("PATCH", "/documents/5")); // 출력: 수정
 // ✏️ 직접 해보기 1 — 무슨일인가("PATCH", "/documents/5") 의 결과를 예상하고 확인하세요.
-
 
 // ── 섹션 2: GET 과 POST 의 진짜 차이 ──
 
@@ -96,27 +90,22 @@ console.log(무슨일인가("DELETE", "/documents/12"));
 //   비밀번호를 GET 으로 보내면 주소창과 서버 기록에 그대로 남습니다.
 //   로그인이 POST 인 이유가 이것입니다.
 
-// GET 요청의 데이터를 꺼내는 법 (개념01 복습)
+// [Line 83~88] GET 요청 쿼리 파라미터 파싱
 const 검색요청 = new URL("http://localhost:3000/search?q=작업표준서&page=2");
+console.log(검색요청.searchParams.get("q")); // 출력: 작업표준서
+console.log(Number(검색요청.searchParams.get("page")) + 1); // 출력: 3
 
-console.log(검색요청.searchParams.get("q"));
-// 출력: 작업표준서
-console.log(Number(검색요청.searchParams.get("page")) + 1);
-// 출력: 3
-// Number 를 안 하면 "21" 이 됩니다. 쿼리는 언제나 문자열입니다.
-
-// POST 요청의 본문은 보통 JSON 입니다.
+// [Line 92~95] POST 본문 JSON 문자열 파싱
 const 본문글자 = '{"title":"작업표준서","writer":"김민준"}';
 const 본문 = JSON.parse(본문글자);
+console.log(본문.title, 본문.writer); // 출력: 작업표준서 김민준
 
-console.log(본문.title, 본문.writer);
-// 출력: 작업표준서 김민준
-// 서버는 본문을 '글자' 로 받습니다. JSON.parse 로 객체를 만들어야 씁니다.
-// 04단원에서 Express 가 이걸 자동으로 해 주는 법을 배웁니다.
+// [Line 99~101] ✏️ 직접 해보기 2 정답: 문자열 숫자 파싱 후 연산
+const 본문2 = JSON.parse('{"id":5,"count":"3"}');
+console.log(Number(본문2.count) + 1); // 출력: 4
 
 // ✏️ 직접 해보기 2 — '{"id":5,"count":"3"}' 을 parse 해서
 //                    count 를 숫자로 바꿔 1 을 더해 출력해 보세요.
-
 
 // ── 섹션 3: 상태코드 — 결과를 숫자로 ──
 
@@ -171,7 +160,6 @@ console.log(isOk(200), isOk(201), isOk(404), isOk(500));
 
 // ✏️ 직접 해보기 3 — 상태설명(301) 과 isOk(301) 을 각각 예상하고 확인하세요.
 
-
 // ── 섹션 4: 실제로 쓰는 상태코드 ──
 
 // 수십 개가 있지만 이 여덟 개면 충분합니다.
@@ -219,7 +207,6 @@ console.log(응답코드("제목이 비어 있음"));
 
 // ✏️ 직접 해보기 4 — "권한 없음" 상황을 표에 추가하고 그 코드를 출력해 보세요.
 
-
 // ── 섹션 5: 헤더 — 본문에 대한 설명서 ──
 
 // 요청과 응답에는 본문 말고 '헤더' 가 붙습니다.
@@ -266,7 +253,6 @@ console.log(헤더["content-type"].includes("application/json"));
 // ✏️ 직접 해보기 5 — content-type 이 "multipart/form-data; boundary=xyz" 일 때
 //                    파일 업로드인지 확인하는 코드를 써 보세요.
 
-
 // ── 섹션 6: 자주 하는 실수 ──
 
 // ★ 아래에서 SyntaxError 라고 적힌 것은 눈으로만 보세요. 주석을 풀지 마세요.
@@ -301,7 +287,6 @@ console.log(헤더["content-type"].includes("application/json"));
 //   코드에서 터짐   → 500 (서버 잘못)
 //   404 를 500 으로 주면 사용자가 "서버가 고장났나?" 하고 오해합니다.
 
-
 // ── 정리 ──
 
 // 1. 경로는 명사, 동작은 메서드. GET / POST / PUT / PATCH / DELETE 다섯이면 충분하다.
@@ -313,7 +298,6 @@ console.log(헤더["content-type"].includes("application/json"));
 // 7. Content-Type 은 본문의 형식을 알려 주는 송장이다. 빠뜨리면 상대가 못 읽는다.
 // 8. 헤더 이름은 소문자로 읽는다.
 
-
 // ============================================================
 // 직접 해보기 정답
 // ============================================================
@@ -323,7 +307,7 @@ console.log(헤더["content-type"].includes("application/json"));
 //    → PUT 과 PATCH 를 같은 갈래로 묶어 두었기 때문입니다.
 //      둘의 차이는 "통째로 바꾸기(PUT)" 와 "일부만 바꾸기(PATCH)" 입니다.
 //      실무에서는 PATCH 를 더 많이 씁니다. 제목만 고치는 일이 흔하니까요.
-//
+// 
 // 2) const 본문2 = JSON.parse('{"id":5,"count":"3"}');
 //    console.log(Number(본문2.count) + 1);
 //    // 출력: 4

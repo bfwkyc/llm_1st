@@ -17,7 +17,6 @@
 
 const { DatabaseSync } = require("node:sqlite");
 
-
 // ── 섹션 1: SQLite 는 설치가 필요 없습니다 ──
 
 // Node 에 SQLite 가 내장돼 있습니다. npm install 이 필요 없습니다.
@@ -37,7 +36,7 @@ const { DatabaseSync } = require("node:sqlite");
 // ★ node: 로 시작하는 것은 '내장 모듈' 이라는 표시입니다.
 //   fs, path, http 와 같은 부류입니다. (백엔드자료 01단원)
 
-const db = new DatabaseSync(":memory:");
+const db = new DatabaseSync("./data/설비.db");
 
 // ":memory:" 는 '파일 없이 메모리에만' 이라는 뜻입니다.
 // 프로그램이 끝나면 사라집니다. 시험할 때 편합니다.
@@ -50,7 +49,6 @@ const db = new DatabaseSync(":memory:");
 
 console.log(db.prepare("SELECT sqlite_version() AS 버전").get().버전);
 // 출력: 3.53.1
-
 
 // ── 섹션 2: 표를 만듭니다 ──
 
@@ -83,7 +81,6 @@ db.exec(`
 //   exec     결과를 안 받는 명령 (CREATE, DROP 등)
 //   prepare  값을 넣거나 받는 명령 (INSERT, SELECT 등)
 
-
 // ── 섹션 3: 넣습니다 (INSERT) ──
 
 const 넣기 = db.prepare("INSERT INTO 설비 (name, line) VALUES (?, ?)");
@@ -96,7 +93,7 @@ console.log(JSON.stringify(결과));
 // ★ ? 는 '여기에 값이 들어갑니다' 라는 자리입니다.
 //   run 에 넘긴 값이 순서대로 들어갑니다.
 //
-//   ★★ 값을 글자로 이어 붙이면 절대 안 됩니다.
+//   ★★ 값을 글자로 이어 붙이면 절대 안 ㅑ.
 //     `INSERT INTO 설비 (name) VALUES ('${이름}')`
 //     이렇게 쓰면 SQL 인젝션이 됩니다. 개념03 에서 진짜로 뚫어 봅니다.
 //
@@ -109,7 +106,6 @@ console.log(JSON.stringify(결과));
 
 넣기.run("프레스 1호", "B");
 넣기.run("용접로봇 1호", "C");
-
 
 // ── 섹션 4: 읽습니다 (SELECT) ──
 
@@ -142,7 +138,6 @@ console.log(없는것);
 //
 //   목록에는 all, 하나 찾을 때는 get 입니다.
 
-
 // ── 섹션 5: 조건으로 찾습니다 ──
 
 // 07단원에서는 전부 읽어서 filter 로 훑었습니다.
@@ -154,7 +149,7 @@ console.log(A라인.length, A라인[0].name);
 // 출력: 1 컨베이어 1호
 
 const 이름순 = db.prepare("SELECT name FROM 설비 ORDER BY name").all();
-
+console.log(JSON.stringify(이름순));
 console.log(JSON.stringify(이름순.map((설비) => 설비.name)));
 // 출력: ["용접로봇 1호","컨베이어 1호","프레스 1호"]
 
@@ -170,18 +165,21 @@ console.log(JSON.stringify(이름순.map((설비) => 설비.name)));
 // ★ 정렬 결과를 보세요. 용접 → 컨베이어 → 프레스 순입니다.
 //   06단원에서 재 본 한글 사전 순서와 같습니다. (ㅇ, ㅋ, ㅍ)
 
-
 // ── 섹션 6: ★ SQLite 는 타입이 느슨합니다 ──
 
 // STRICT 없이 만든 표는 INTEGER 칸에 글자를 넣어도 받아 줍니다.
 
-const 느슨한db = new DatabaseSync(":memory:");
+const 느슨한db = new DatabaseSync("./data/느슨한.db");
 느슨한db.exec("CREATE TABLE 느슨 (id INTEGER PRIMARY KEY, 수량 INTEGER)");
 
 느슨한db.prepare("INSERT INTO 느슨 (수량) VALUES (?)").run(100);
 느슨한db.prepare("INSERT INTO 느슨 (수량) VALUES (?)").run("백개");
 
-console.log(JSON.stringify(느슨한db.prepare("SELECT 수량, typeof(수량) AS 실제타입 FROM 느슨").all()));
+console.log(
+  JSON.stringify(
+    느슨한db.prepare("SELECT 수량, typeof(수량) AS 실제타입 FROM 느슨").all(),
+  ),
+);
 // 출력: [{"수량":100,"실제타입":"integer"},{"수량":"백개","실제타입":"text"}]
 
 // ★★★ INTEGER 라고 적어 뒀는데 "백개" 가 들어갔습니다.
@@ -193,7 +191,7 @@ console.log(JSON.stringify(느슨한db.prepare("SELECT 수량, typeof(수량) AS
 // ★ STRICT 를 붙이면 막아 줍니다. 그런데 '완전히' 막는 건 아닙니다.
 //   실제로 재 봤습니다.
 
-const 엄격db = new DatabaseSync(":memory:");
+const 엄격db = new DatabaseSync("./data/엄격.db");
 엄격db.exec("CREATE TABLE 엄격 (수량 INTEGER, 이름 TEXT) STRICT");
 
 function 넣어보기(칸, 값) {
@@ -201,7 +199,9 @@ function 넣어보기(칸, 값) {
     엄격db.prepare(`INSERT INTO 엄격 (${칸}) VALUES (?)`).run(값);
 
     const 마지막 = 엄격db
-      .prepare(`SELECT ${칸} AS 값, typeof(${칸}) AS 타입 FROM 엄격 ORDER BY rowid DESC LIMIT 1`)
+      .prepare(
+        `SELECT ${칸} AS 값, typeof(${칸}) AS 타입 FROM 엄격 ORDER BY rowid DESC LIMIT 1`,
+      )
       .get();
 
     return `통과 → ${JSON.stringify(마지막.값)} (${마지막.타입})`;
@@ -243,11 +243,12 @@ console.log(넣어보기("이름", 123));
 //   SQLite 3.37(2021) 부터 됩니다. 안 붙일 이유가 거의 없습니다.
 //   Postgres·MySQL 은 원래 타입을 지킵니다. STRICT 가 그쪽에 맞추는 것입니다.
 
+// ── 섹션 7: ★ 지운 번호가 다시 나옵니다ㅍ ──
 
-// ── 섹션 7: ★ 지운 번호가 다시 나옵니다 ──
-
-const 번호db = new DatabaseSync(":memory:");
-번호db.exec("CREATE TABLE 것 (id INTEGER PRIMARY KEY, name TEXT NOT NULL) STRICT");
+const 번호db = new DatabaseSync("./data/번호.db");
+번호db.exec(
+  "CREATE TABLE 것 (id INTEGER PRIMARY KEY, name TEXT NOT NULL) STRICT",
+);
 
 const 것넣기 = 번호db.prepare("INSERT INTO 것 (name) VALUES (?)");
 것넣기.run("첫째");
@@ -272,8 +273,10 @@ console.log(JSON.stringify(번호db.prepare("SELECT id, name FROM 것").all()));
 //
 // ★ 막는 법: AUTOINCREMENT 를 붙입니다.
 
-const 자동db = new DatabaseSync(":memory:");
-자동db.exec("CREATE TABLE 것 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL) STRICT");
+const 자동db = new DatabaseSync("./data/자동.db");
+자동db.exec(
+  "CREATE TABLE 것 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL) STRICT",
+);
 
 const 자동넣기 = 자동db.prepare("INSERT INTO 것 (name) VALUES (?)");
 자동넣기.run("첫째");
@@ -293,11 +296,11 @@ console.log(JSON.stringify(자동db.prepare("SELECT id, name FROM 것").all()));
 //
 //   Postgres 는 SERIAL·IDENTITY, MySQL 은 AUTO_INCREMENT 로 같은 일을 합니다.
 
-
 // ── 섹션 8: 어떤 데이터베이스를 쓰나 ──
 
 const 비교 = {
-  SQLite: "파일 하나. 설치 없음. 서버 한 대·읽기 중심에 좋습니다. 이 자료에서 씁니다",
+  SQLite:
+    "파일 하나. 설치 없음. 서버 한 대·읽기 중심에 좋습니다. 이 자료에서 씁니다",
   PostgreSQL: "가장 많이 쓰는 관계형 DB. Supabase 가 이걸 씁니다 (05단원)",
   MySQL: "웹에서 오래 쓰인 것. 회사에 이미 있는 경우가 많습니다",
   MongoDB: "표가 아니라 JSON 을 그대로 담습니다. SQL 을 안 씁니다",
@@ -320,7 +323,6 @@ for (const 이름 of Object.keys(비교)) {
 //   "장난감" 이 아닙니다. 비행기 안, 휴대폰 앱, 브라우저 안에 전부 들어 있습니다.
 //   다만 '서버를 여러 대 띄우는' 구조에는 안 맞습니다. 그때 Postgres 로 갑니다.
 
-
 // ── 섹션 9: 앞으로 이렇게 갑니다 ──
 
 const 계획 = [
@@ -340,7 +342,6 @@ const 계획 = [
 //   백엔드자료에서 계층을 나눈 이유가 거기서 드러납니다.
 //   repositories 한 폴더만 고치고, services·controllers·routes 는 안 건드립니다.
 
-
 // ============================================================
 // 07단원의 다섯 가지 문제, 어떻게 되나
 // ============================================================
@@ -355,7 +356,6 @@ const 계획 = [
 //
 // ★ 개념05 에서 07단원의 '20건 중 1건' 실험을 그대로 다시 합니다.
 //   이번에는 20건이 전부 남습니다. 직접 재 봅니다.
-
 
 // ============================================================
 // 직접 해 볼 것
@@ -382,7 +382,6 @@ const 계획 = [
 // ✏️ 직접 해보기 7 — DB Browser for SQLite 를 설치해 보세요.
 //                    만든 .db 파일을 열면 표가 눈에 보입니다.
 //                    수업에서 확인할 때 아주 편합니다.
-
 
 // ── 자주 하는 실수 ──
 

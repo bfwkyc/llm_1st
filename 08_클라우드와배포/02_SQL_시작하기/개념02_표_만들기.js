@@ -13,16 +13,15 @@
 
 const { DatabaseSync } = require("node:sqlite");
 
-const db = new DatabaseSync(":memory:");
-db.exec("PRAGMA foreign_keys = ON");   // ★ 버전·도구에 따라 기본값이 다릅니다. 직접 켭니다.
-
+const db = new DatabaseSync("./data/02개념.db");
+db.exec("PRAGMA foreign_keys = ON"); // ★ 버전·도구에 따라 기본값이 다릅니다. 직접 켭니다.
 
 // ============================================================
 // 1. 가장 작은 표
 // ============================================================
 
 db.exec(`
-  CREATE TABLE 메모 (
+  CREATE TABLE IF NOT EXISTS 메모 (
     id   INTEGER PRIMARY KEY,
     내용 TEXT
   ) STRICT
@@ -105,7 +104,7 @@ console.log({ ...메모하나 });
 
 // ★★ STRICT 를 안 붙이면 오타도 그냥 지나갑니다. 재 봅시다.
 
-db.exec("CREATE TABLE 헐렁 (수량 INTEGR)"); // ← INTEGER 를 INTEGR 로 잘못 씀
+db.exec("CREATE TABLE IF NOT EXISTS 헐렁 (수량 INTEGR)"); // ← INTEGER 를 INTEGR 로 잘못 씀
 console.log("STRICT 없는 표: 오타 타입도 그냥 만들어집니다");
 // 출력: STRICT 없는 표: 오타 타입도 그냥 만들어집니다
 
@@ -137,13 +136,13 @@ try {
 // 번호 말고 다른 걸 열쇠로 쓸 수도 있습니다.
 
 db.exec(`
-  CREATE TABLE 라인 (
+  CREATE TABLE IF NOT EXISTS 라인 (
     코드 TEXT PRIMARY KEY,
     이름 TEXT NOT NULL
   ) STRICT
 `);
 
-const 라인넣기 = db.prepare("INSERT INTO 라인 (코드, 이름) VALUES (?, ?)");
+const 라인넣기 = db.prepare("INSERT INTO  라인 (코드, 이름) VALUES (?, ?)");
 라인넣기.run("A", "조립 1라인");
 라인넣기.run("B", "조립 2라인");
 
@@ -233,16 +232,23 @@ function 시도(설명, 하기) {
 // 5. DEFAULT — 안 넣으면 채워지는 값
 // ============================================================
 
-db.prepare("INSERT INTO 설비 (이름, 라인코드) VALUES (?, ?)").run("컨베이어 1호", "A");
+db.prepare("INSERT INTO 설비 (이름, 라인코드) VALUES (?, ?)").run(
+  "컨베이어 1호",
+  "A",
+);
 
-const 방금 = db.prepare("SELECT 이름, 상태, 온도 FROM 설비 WHERE 이름 = ?").get("컨베이어 1호");
+const 방금 = db
+  .prepare("SELECT 이름, 상태, 온도 FROM 설비 WHERE 이름 = ?")
+  .get("컨베이어 1호");
 console.log({ ...방금 });
 // 출력: { '이름': '컨베이어 1호', '상태': '정상', '온도': null }
 
 // 상태를 안 넣었는데 '정상' 이 들어갔습니다. DEFAULT 덕분입니다.
 // 온도는 DEFAULT 가 없어서 NULL 이 됐습니다.
 
-const 시각 = db.prepare("SELECT 등록시각 FROM 설비 WHERE 이름 = ?").get("컨베이어 1호");
+const 시각 = db
+  .prepare("SELECT 등록시각 FROM 설비 WHERE 이름 = ?")
+  .get("컨베이어 1호");
 console.log("등록시각 길이:", 시각.등록시각.length);
 // 출력: 등록시각 길이: 19
 
@@ -294,7 +300,9 @@ console.log({ ...db.prepare("PRAGMA foreign_keys").get() });
 const 칸들 = db.prepare("PRAGMA table_info('설비')").all();
 
 for (const 칸 of 칸들) {
-  console.log(`${칸.name} / ${칸.type} / ${칸.notnull ? "NOT NULL" : "비어도 됨"}`);
+  console.log(
+    `${칸.name} / ${칸.type} / ${칸.notnull ? "NOT NULL" : "비어도 됨"}`,
+  );
 }
 // 출력: id / INTEGER / 비어도 됨
 // 출력: 이름 / TEXT / NOT NULL
@@ -310,18 +318,26 @@ for (const 칸 of 칸들) {
 console.log("id 의 pk 표시:", 칸들[0].pk);
 // 출력: id 의 pk 표시: 1
 
-const 표들 = db.prepare(`
+const 표들 = db
+  .prepare(
+    `
   SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name
-`).all();
+`,
+  )
+  .all();
 console.log(표들.map((표) => 표.name));
 // 출력: [ '라인', '메모', '설비', '헐렁' ]
 
 // sqlite_master 는 SQLite 가 스스로 관리하는 표입니다.
 // 어떤 표가 있는지, 어떻게 만들었는지가 다 들어 있습니다.
 
-const 만든문장 = db.prepare(`
+const 만든문장 = db
+  .prepare(
+    `
   SELECT sql FROM sqlite_master WHERE name = '라인'
-`).get();
+`,
+  )
+  .get();
 console.log(만든문장.sql.replace(/\s+/g, " ").trim());
 // 출력: CREATE TABLE 라인 ( 코드 TEXT PRIMARY KEY, 이름 TEXT NOT NULL ) STRICT
 
@@ -350,7 +366,12 @@ console.log("IF NOT EXISTS → 아무 일도 안 일어남");
 //   안에 적은 내용이 달라도 고쳐 주지 않습니다.
 //   위에서 라인 표를 (코드 TEXT) 로 다시 적었지만 이름 칸은 그대로 있습니다.
 
-console.log(db.prepare("PRAGMA table_info('라인')").all().map((칸) => 칸.name));
+console.log(
+  db
+    .prepare("PRAGMA table_info('라인')")
+    .all()
+    .map((칸) => 칸.name),
+);
 // 출력: [ '코드', '이름' ]
 
 // 이게 나중에 "분명히 칸을 추가했는데 왜 없지?" 의 원인입니다.
@@ -361,7 +382,13 @@ console.log(db.prepare("PRAGMA table_info('라인')").all().map((칸) => 칸.nam
 // ============================================================
 
 db.exec("ALTER TABLE 설비 ADD COLUMN 비고 TEXT NOT NULL DEFAULT ''");
-console.log(db.prepare("PRAGMA table_info('설비')").all().map((칸) => 칸.name).join(", "));
+console.log(
+  db
+    .prepare("PRAGMA table_info('설비')")
+    .all()
+    .map((칸) => 칸.name)
+    .join(", "),
+);
 // 출력: id, 이름, 라인코드, 상태, 온도, 등록시각, 비고
 
 // ★ NOT NULL 칸을 추가할 때는 DEFAULT 를 같이 줘야 합니다.
@@ -390,9 +417,16 @@ try {
 // ============================================================
 
 db.exec("DROP TABLE 헐렁");
-console.log(db.prepare(`
+console.log(
+  db
+    .prepare(
+      `
   SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name
-`).all().map((표) => 표.name));
+`,
+    )
+    .all()
+    .map((표) => 표.name),
+);
 // 출력: [ '라인', '메모', '설비' ]
 
 // ★★ DROP TABLE 은 되돌릴 수 없습니다. 안에 든 자료가 전부 사라집니다.

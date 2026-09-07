@@ -23,7 +23,6 @@ const http = require("http");
 // (나중에 서버에 올리면 포트를 밖에서 정해 주는 일이 많습니다. PART 4)
 const PORT = process.env.PORT || 3000;
 
-
 // ── 섹션 1: 가장 작은 서버 ──
 
 // createServer 에 함수를 하나 넘깁니다.
@@ -79,6 +78,7 @@ const server = http.createServer((req, res) => {
       const 목록 = [
         { id: 1, title: "작업표준서" },
         { id: 2, title: "검사성적서" },
+        { id: 3, title: "직접해보기" },
       ];
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify(목록));
@@ -130,6 +130,11 @@ const server = http.createServer((req, res) => {
     // 응답: 200 {"검색어":"작업표준서","결과수":0}
   }
 
+  if (경로 === "/about") {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("안녕하세요");
+    return;
+  }
   // ── 섹션 5: 어디에도 안 걸리면 404 ──
 
   // 위에서 아무것도 return 하지 않았다면 모르는 주소입니다.
@@ -139,7 +144,6 @@ const server = http.createServer((req, res) => {
   // 확인: GET /없는주소
   // 응답: 404 {"error":"그런 주소가 없습니다"}
 });
-
 
 // ── 섹션 6: 서버 켜기 ──
 
@@ -153,7 +157,6 @@ server.listen(PORT, () => {
 //
 // 이 콜백은 서버가 다 켜졌을 때 딱 한 번 실행됩니다.
 // 요청이 올 때마다 실행되는 것이 아닙니다. 위쪽 createServer 의 콜백과 다릅니다.
-
 
 // ============================================================
 // 직접 해 볼 것
@@ -201,7 +204,6 @@ server.listen(PORT, () => {
 // 이 넷을 전부 해결해 주는 것이 Express 입니다. 04단원에서 만납니다.
 // 지금 불편함을 느껴 봐야 Express 가 왜 고마운지 알 수 있습니다.
 
-
 // ── 자주 하는 실수 ──
 
 // [실수 1] res.end 를 안 부름
@@ -227,7 +229,6 @@ server.listen(PORT, () => {
 
 // [실수 6] 파일을 고치고 새로고침만 함
 //   서버는 다시 켜야 반영됩니다. 브라우저 새로고침으로는 안 됩니다.
-
 
 // ── 정리 ──
 

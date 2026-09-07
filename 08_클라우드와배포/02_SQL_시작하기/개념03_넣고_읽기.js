@@ -13,7 +13,7 @@
 
 const { DatabaseSync } = require("node:sqlite");
 
-const db = new DatabaseSync(":memory:");
+const db = new DatabaseSync("./data/03개념.db");
 
 db.exec(`
   CREATE TABLE 설비 (
@@ -63,7 +63,11 @@ for (const [이름, 라인, 온도, 담당자] of 자료) {
   넣기.run(이름, 라인, 온도, 담당자);
 }
 
-console.log("총", db.prepare("SELECT COUNT(*) AS 개수 FROM 설비").get().개수, "대");
+console.log(
+  "총",
+  db.prepare("SELECT COUNT(*) AS 개수 FROM 설비").get().개수,
+  "대",
+);
 // 출력: 총 5 대
 
 // ★ prepare 는 SQL 문장을 미리 해석해 두는 것입니다.
@@ -123,7 +127,9 @@ function 시도(설명, 하기) {
 시도("인자 4개 중 2개만", () => 넣기.run("시험5", "Z"));
 // 출력: 인자 4개 중 2개만 → 통과
 
-const 시험5 = db.prepare("SELECT 온도, 담당자 FROM 설비 WHERE 이름 = ?").get("시험5");
+const 시험5 = db
+  .prepare("SELECT 온도, 담당자 FROM 설비 WHERE 이름 = ?")
+  .get("시험5");
 console.log({ ...시험5 });
 // 출력: { '온도': null, '담당자': null }
 
@@ -152,7 +158,10 @@ const 이름넣기 = db.prepare(`
 
 이름넣기.run({ 이름: "포장기 1호", 라인: "C", 온도: 20.1, 담당자: "최지우" });
 
-console.log(db.prepare("SELECT 라인, 담당자 FROM 설비 WHERE 이름 = ?").get("포장기 1호").담당자);
+console.log(
+  db.prepare("SELECT 라인, 담당자 FROM 설비 WHERE 이름 = ?").get("포장기 1호")
+    .담당자,
+);
 // 출력: 최지우
 
 // ★ 객체의 키에는 $ 를 안 붙입니다. SQL 쪽에만 붙입니다.
@@ -165,7 +174,9 @@ console.log(db.prepare("SELECT 라인, 담당자 FROM 설비 WHERE 이름 = ?").
 // 5. SELECT — 꺼내는 세 가지 방법
 // ============================================================
 
-const 전부 = db.prepare("SELECT id, 이름, 라인 FROM 설비 WHERE 라인 = ?").all("A");
+const 전부 = db
+  .prepare("SELECT id, 이름, 라인 FROM 설비 WHERE 라인 = ?")
+  .all("A");
 console.log(JSON.stringify(전부));
 // 출력: [{"id":1,"이름":"용접로봇 1호","라인":"A"},{"id":2,"이름":"프레스 1호","라인":"A"}]
 
@@ -184,7 +195,9 @@ console.log(없는것);
 //
 // ★ all() 은 없으면 빈 배열 [] 입니다. undefined 가 아닙니다.
 
-console.log(db.prepare("SELECT * FROM 설비 WHERE 라인 = ?").all("없는라인").length);
+console.log(
+  db.prepare("SELECT * FROM 설비 WHERE 라인 = ?").all("없는라인").length,
+);
 // 출력: 0
 
 // ============================================================
@@ -215,7 +228,9 @@ console.log(db.prepare("SELECT * FROM 설비 WHERE 라인 = ?").all("없는라�
 
 function 세기(조건, ...값들) {
   // 검증무시: 조건은 이 파일에 적힌 상수뿐입니다 (사용자 입력이 오면 안 됩니다)
-  const 수 = db.prepare(`SELECT COUNT(*) AS n FROM 설비 WHERE ${조건}`).get(...값들).n;
+  const 수 = db
+    .prepare(`SELECT COUNT(*) AS 개수 FROM 설비 WHERE ${조건}`)
+    .get(...값들).개수;
   console.log(`${조건} → ${수}대`);
 }
 
@@ -257,11 +272,19 @@ function 세기(조건, ...값들) {
 // ★★★ 더 위험한 건 이겁니다.
 
 세기("담당자 <> '김민준'");
-// 출력: 담당자 <> '김민준' → 4대
+// 출력: 담당자 <> '김민준' → 4대 
 
-console.log("전체:", db.prepare("SELECT COUNT(*) AS n FROM 설비").get().n, "대");
+console.log(
+  "전체:",
+  db.prepare("SELECT COUNT(*) AS n FROM 설비").get().n,
+  "대",
+);
 // 출력: 전체: 9 대
-console.log("김민준 담당:", db.prepare("SELECT COUNT(*) AS n FROM 설비 WHERE 담당자 = '김민준'").get().n, "대");
+console.log(
+  "김민준 담당:",
+  db.prepare("SELECT COUNT(*) AS n FROM 설비 WHERE 담당자 = '김민준'").get().n,
+  "대",
+);
 // 출력: 김민준 담당: 1 대
 
 // 전체 9대, 김민준이 1대인데 "김민준이 아닌" 게 4대?
@@ -282,12 +305,16 @@ console.log("김민준 담당:", db.prepare("SELECT COUNT(*) AS n FROM 설비 WH
 // 7. ORDER BY · LIMIT
 // ============================================================
 
-const 더운순 = db.prepare(`
+const 더운순 = db
+  .prepare(
+    `
   SELECT 이름, 온도 FROM 설비
   WHERE 온도 IS NOT NULL
   ORDER BY 온도 DESC
   LIMIT 3
-`).all();
+`,
+  )
+  .all();
 console.log(JSON.stringify(더운순.map((설비) => `${설비.이름}(${설비.온도})`)));
 // 출력: ["프레스 1호(41.2)","프레스 2호(39.8)","용접로봇 1호(36.5)"]
 
@@ -297,7 +324,9 @@ console.log(JSON.stringify(더운순.map((설비) => `${설비.이름}(${설비.
 //   LIMIT 3             3개만
 //   LIMIT 3 OFFSET 10   11번째부터 3개 (11~13)
 
-const 둘째장 = db.prepare("SELECT 이름 FROM 설비 ORDER BY id LIMIT 3 OFFSET 3").all();
+const 둘째장 = db
+  .prepare("SELECT 이름 FROM 설비 ORDER BY id LIMIT 3 OFFSET 3")
+  .all();
 console.log(JSON.stringify(둘째장.map((설비) => 설비.이름)));
 // 출력: ["컨베이어 1호","검사기 1호","시험1"]
 
@@ -329,7 +358,9 @@ db.prepare("INSERT INTO 설비 (이름, 라인) VALUES (?, ?)").run("Pump A", "D
 // 왜 그래야 하는지 이제 봅니다.
 
 const 회원db = new DatabaseSync(":memory:");
-회원db.exec("CREATE TABLE 회원 (id INTEGER PRIMARY KEY, 아이디 TEXT, 비번 TEXT, 등급 TEXT) STRICT");
+회원db.exec(
+  "CREATE TABLE 회원 (id INTEGER PRIMARY KEY, 아이디 TEXT, 비번 TEXT, 등급 TEXT) STRICT",
+);
 회원db.exec(`
   INSERT INTO 회원 (아이디, 비번, 등급) VALUES
     ('kim', '1234', '일반'),
@@ -357,7 +388,9 @@ const 뚫린것 = 위험한_로그인("admin", 공격);
 console.log("나온 줄 수:", 뚫린것.length);
 // 출력: 나온 줄 수: 3
 
-console.log(JSON.stringify(뚫린것.map((회원) => `${회원.아이디}/${회원.등급}`)));
+console.log(
+  JSON.stringify(뚫린것.map((회원) => `${회원.아이디}/${회원.등급}`)),
+);
 // 출력: ["kim/일반","admin/관리자","lee/일반"]
 
 // 비번을 모르는데 회원 명단이 통째로 나왔습니다. 비밀번호까지 같이요.
@@ -434,8 +467,13 @@ const 표1 = new DatabaseSync(":memory:");
 표1.exec("CREATE TABLE 회원 (id INTEGER PRIMARY KEY, 등급 TEXT) STRICT");
 표1.exec("INSERT INTO 회원 (등급) VALUES ('일반'), ('일반'), ('관리자')");
 
-표1.prepare("UPDATE 회원 SET 등급 = '관리자' WHERE id = 1; DELETE FROM 회원").run();
-console.log("prepare 뒤 남은 줄:", 표1.prepare("SELECT COUNT(*) AS n FROM 회원").get().n);
+표1.prepare(
+  "UPDATE 회원 SET 등급 = '관리자' WHERE id = 1; DELETE FROM 회원",
+).run();
+console.log(
+  "prepare 뒤 남은 줄:",
+  표1.prepare("SELECT COUNT(*) AS n FROM 회원").get().n,
+);
 // 출력: prepare 뒤 남은 줄: 3
 
 // 안 지워졌습니다. prepare 는 **첫 번째 문장만** 실행하기 때문입니다.
@@ -451,7 +489,10 @@ const 표2 = new DatabaseSync(":memory:");
 표2.exec("INSERT INTO 회원 (등급) VALUES ('일반'), ('일반'), ('관리자')");
 
 표2.exec("UPDATE 회원 SET 등급 = '관리자' WHERE id = 1; DELETE FROM 회원");
-console.log("exec 뒤 남은 줄:", 표2.prepare("SELECT COUNT(*) AS n FROM 회원").get().n);
+console.log(
+  "exec 뒤 남은 줄:",
+  표2.prepare("SELECT COUNT(*) AS n FROM 회원").get().n,
+);
 // 출력: exec 뒤 남은 줄: 0
 
 // 전부 지워졌습니다. exec 는 세미콜론으로 이어진 문장을 다 실행합니다.
@@ -491,7 +532,9 @@ function 정렬해서(칸) {
 
 console.log(JSON.stringify(정렬해서("아이디").map((회원) => 회원.아이디)));
 // 출력: ["admin","kim","lee"]
-console.log(JSON.stringify(정렬해서("비번; DROP TABLE 회원").map((회원) => 회원.아이디)));
+console.log(
+  JSON.stringify(정렬해서("비번; DROP TABLE 회원").map((회원) => 회원.아이디)),
+);
 // 출력: ["kim","admin","lee"]
 
 // 목록에 없는 값이 오면 기본값 id 로 떨어집니다.
@@ -514,7 +557,9 @@ try {
 // ○ 개수만큼 ? 를 만들어야 합니다
 const 물음표들 = 찾을것.map(() => "?").join(", ");
 // 검증무시: 끼워 넣는 것은 값이 아니라 ? 뿐입니다. 값은 .all() 로 넘어갑니다
-const 찾은것 = 회원db.prepare(`SELECT 아이디 FROM 회원 WHERE 아이디 IN (${물음표들})`).all(...찾을것);
+const 찾은것 = 회원db
+  .prepare(`SELECT 아이디 FROM 회원 WHERE 아이디 IN (${물음표들})`)
+  .all(...찾을것);
 console.log(JSON.stringify(찾은것.map((회원) => 회원.아이디)));
 // 출력: ["kim","lee"]
 

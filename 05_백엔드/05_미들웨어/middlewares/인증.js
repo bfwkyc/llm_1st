@@ -14,7 +14,7 @@ const 키별사용자 = {
 
 function 인증(req, res, next) {
   const 헤더값 = req.get("Authorization");
-
+  console.log("req.요청번호:", req.요청번호);
   if (!헤더값) {
     return next(HttpError(401, "로그인이 필요합니다"));
   }
@@ -44,7 +44,9 @@ function 역할확인(...허용역할들) {
     }
 
     if (!허용역할들.includes(req.user.role)) {
-      return next(HttpError(403, `${허용역할들.join(" 또는 ")} 만 할 수 있습니다`));
+      return next(
+        HttpError(403, `${허용역할들.join(" 또는 ")} 만 할 수 있습니다`),
+      );
     }
 
     next();
